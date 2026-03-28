@@ -1,0 +1,41 @@
+{
+  "name": "@t34-dev/claude-statusline",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.0.0",
+  "description": "Rich status line for Claude Code with rate limit countdown, context usage, git info, and session timer",
+  "bin": {
+    "claude-statusline": "./bin/install.js"
+  },
+  "keywords": [
+    "claude-code",
+    "statusline",
+    "status-bar",
+    "git",
+    "cli",
+    "terminal",
+    "productivity",
+    "rate-limit",
+    "countdown"
+  ],
+  "author": "t34-dev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/t34-dev/claude-statusline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/t34-dev/claude-statusline/issues"
+  },
+  "homepage": "https://github.com/t34-dev/claude-statusline#readme",
+  "files": [
+    "bin/",
+    "statusline.sh",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=14"
+  }
+}
