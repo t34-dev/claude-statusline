@@ -1,20 +1,18 @@
 # claude-statusline
 
-A rich status line for [Claude Code](https://claude.ai/code) with rate limit countdown timers, context window usage, git info, and session duration.
+A status line for [Claude Code](https://claude.ai/code) that shows what matters while you work: context usage, rate limits with countdown to reset, and the current CLI version.
 
 ![screenshot](./screenshot.png)
 
-## Features
+## What it shows
 
-- **Working directory** — full path with `~` shorthand
-- **Model name** — current Claude model (Opus, Sonnet, Haiku)
-- **Context usage** — percentage of context window used, color-coded (green → yellow → red)
-- **Git branch** — current branch with dirty state indicator (`*`)
-- **Session timer** — how long the current session has been active
-- **Effort level** — current effort setting (low/medium/high/default)
-- **Rate limit bars** — visual progress bars for 5-hour and 7-day usage limits
-- **Countdown timers** — time remaining until rate limit resets (e.g., `3h 42m`, `1d 14h 22m`)
-- **Extra usage tracking** — shows spending if extra usage is enabled
+- Current model and Claude Code version (e.g. `v2.1.89`)
+- Context window usage, color coded from green to red as you fill it up
+- Git branch with dirty state indicator
+- Session duration
+- Effort level setting
+- Rate limit bars for 5-hour and 7-day windows, with time until reset
+- Extra usage spending if enabled
 
 ## Install
 
@@ -22,13 +20,9 @@ A rich status line for [Claude Code](https://claude.ai/code) with rate limit cou
 npx @t34-dev/claude-statusline
 ```
 
-The installer will:
-1. Check for required dependencies (`jq`, `curl`, `git`)
-2. Back up any existing statusline configuration
-3. Install the script to `~/.claude/statusline.sh`
-4. Update `~/.claude/settings.json`
+This checks for dependencies (`jq`, `curl`, `git`), backs up your existing config, drops the script into `~/.claude/statusline.sh`, and updates `~/.claude/settings.json`.
 
-Then restart Claude Code to see the new status line.
+Restart Claude Code after installing.
 
 ## Uninstall
 
@@ -40,60 +34,49 @@ Restores your previous statusline if one was backed up.
 
 ## Requirements
 
-- [jq](https://jqlang.github.io/jq/) — JSON parsing
-- curl — fetching rate limit data from Anthropic API
-- git — branch and dirty state detection
+You need [jq](https://jqlang.github.io/jq/), curl, and git.
 
-### macOS
-
+macOS:
 ```bash
 brew install jq
 ```
 
-### Ubuntu / Debian
-
+Ubuntu/Debian:
 ```bash
 sudo apt install jq curl git
 ```
 
-### Windows (Git Bash)
-
+Windows (Git Bash):
 ```bash
 choco install jq curl git
 ```
 
-Or use [scoop](https://scoop.sh/):
-
+Or with [scoop](https://scoop.sh/):
 ```bash
 scoop install jq curl git
 ```
 
-## Platform Support
+## Platform support
 
 | Platform | Shell | Status |
 |----------|-------|--------|
-| macOS | zsh, bash | Fully supported |
-| Linux | bash, zsh | Fully supported |
-| Windows | Git Bash | Supported |
-| Windows | WSL | Fully supported |
+| macOS | zsh, bash | Works |
+| Linux | bash, zsh | Works |
+| Windows | Git Bash | Works |
+| Windows | WSL | Works |
 
-The script handles platform differences automatically:
-- BSD `date` (macOS) and GNU `date` (Linux/Windows) for time parsing
-- macOS Keychain, Linux `secret-tool`, and credentials file for OAuth token resolution
-- BSD `stat` and GNU `stat` for cache file age detection
+The script handles BSD vs GNU differences for `date` and `stat` automatically. OAuth tokens come from macOS Keychain, Linux `secret-tool`, or the credentials file, whichever is available.
 
-## Display Layout
+## Layout
 
 ```
 ~/path/to/project
-Opus 4.6 (1M context) │ ✍️ 12% │ my-project (main) │ ⏱ 45m │ ◑ default
+Opus 4.6 (1M context) v2.1.89 │ ✍️ 12% │ main │ ⏱ 45m │ ● high
 current ●○○○○○○○○○   1% ⟳ 3h 42m
 weekly  ●○○○○○○○○○  15% ⟳ 1d 14h 22m
 ```
 
-### Color Coding
-
-Context and rate limit usage is color-coded by percentage:
+Usage colors shift by percentage:
 
 | Range | Color |
 |-------|-------|
@@ -102,15 +85,15 @@ Context and rate limit usage is color-coded by percentage:
 | 70-89% | Yellow |
 | 90-100% | Red |
 
-## How It Works
+## How it works
 
-The status line script receives JSON data from Claude Code via stdin. It parses model info, context window usage, and session data using `jq`. Rate limit data is fetched from the Anthropic API using your OAuth token (auto-discovered from Keychain, credentials file, or environment variable) and cached for 60 seconds.
+The script reads JSON from Claude Code via stdin, pulls out model info, context usage, and session data with `jq`. Rate limits come from the Anthropic API using your OAuth token (auto-discovered from Keychain, credentials file, or env variable) and get cached for 60 seconds so you're not hitting the API on every refresh.
 
-## Configuration
+## Customization
 
-The script is installed at `~/.claude/statusline.sh`. You can edit it directly to customize the display.
+The script lives at `~/.claude/statusline.sh`, edit it however you like.
 
-The settings entry in `~/.claude/settings.json`:
+Settings entry in `~/.claude/settings.json`:
 
 ```json
 {
@@ -123,7 +106,7 @@ The settings entry in `~/.claude/settings.json`:
 
 ## Credits
 
-Inspired by [kamranahmedse/claude-statusline](https://github.com/kamranahmedse/claude-statusline). Extended with countdown timers, working directory display, and cross-platform support.
+Started from [kamranahmedse/claude-statusline](https://github.com/kamranahmedse/claude-statusline), then added countdown timers, CLI version display, working directory, and cross-platform support.
 
 ## License
 
