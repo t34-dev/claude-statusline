@@ -140,6 +140,11 @@ else
     pct_used=0
 fi
 
+claude_version=""
+if command -v claude >/dev/null 2>&1; then
+    claude_version=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+fi
+
 effort="default"
 settings_path="$HOME/.claude/settings.json"
 if [ -f "$settings_path" ]; then
@@ -185,12 +190,14 @@ if [ -n "$session_start" ] && [ "$session_start" != "null" ]; then
 fi
 
 line1="${blue}${model_name}${reset}"
+if [ -n "$claude_version" ]; then
+    line1+=" ${dim}v${claude_version}${reset}"
+fi
 line1+="${sep}"
 line1+="✍️ ${pct_color}${pct_used}%${reset}"
-line1+="${sep}"
-line1+="${cyan}${dirname}${reset}"
 if [ -n "$git_branch" ]; then
-    line1+=" ${green}(${git_branch}${red}${git_dirty}${green})${reset}"
+    line1+="${sep}"
+    line1+="${green}${git_branch}${red}${git_dirty}${reset}"
 fi
 if [ -n "$session_duration" ]; then
     line1+="${sep}"
