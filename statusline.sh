@@ -50,6 +50,9 @@ build_bar() {
     [ "$pct" -gt 100 ] 2>/dev/null && pct=100
 
     local filled=$(( pct * width / 100 ))
+    if [ "$pct" -gt 0 ] && [ "$filled" -eq 0 ]; then
+        filled=1
+    fi
     local empty=$(( width - filled ))
     local bar_color
     bar_color=$(color_for_pct "$pct")
