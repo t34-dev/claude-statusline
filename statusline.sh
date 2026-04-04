@@ -265,20 +265,40 @@ get_oauth_token() {
 # ── Fetch usage data (cached) ──────────────────────────
 cache_dir="/tmp/claude"
 cache_file="${cache_dir}/statusline-usage-cache.json"
-cache_max_age=60
+cache_lock="${cache_dir}/statusline-usage-lock"
+cache_max_age=300
 mkdir -p "$cache_dir" 2>/dev/null
 
-needs_refresh=true
 usage_data=""
+usage_stale=false
+data_age=0
 
+# Always load cached data first
 if [ -f "$cache_file" ]; then
+    usage_data=$(cat "$cache_file" 2>/dev/null)
     cache_mtime=$(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file" 2>/dev/null)
-    now=$(date +%s)
-    cache_age=$(( now - cache_mtime ))
-    if [ "$cache_age" -lt "$cache_max_age" ]; then
-        needs_refresh=false
-        usage_data=$(cat "$cache_file" 2>/dev/null)
+    data_age=$(( $(date +%s) - cache_mtime ))
+    [ "$data_age" -ge "$cache_max_age" ] && usage_stale=true
+fi
+
+# Detect if cached reset time has passed → refresh more aggressively
+refresh_interval=$cache_max_age
+if [ -n "$usage_data" ]; then
+    cached_reset_iso=$(echo "$usage_data" | jq -r '.five_hour.resets_at // empty')
+    if [ -n "$cached_reset_iso" ] && [ "$cached_reset_iso" != "null" ]; then
+        cached_reset_epoch=$(iso_to_epoch "$cached_reset_iso")
+        if [ -n "$cached_reset_epoch" ] && [ "$(date +%s)" -ge "$cached_reset_epoch" ]; then
+            refresh_interval=60
+        fi
     fi
+fi
+
+# Single throttle: one API call per refresh_interval, based on lock mtime
+needs_refresh=true
+if [ -f "$cache_lock" ]; then
+    lock_mtime=$(stat -c %Y "$cache_lock" 2>/dev/null || stat -f %m "$cache_lock" 2>/dev/null)
+    lock_age=$(( $(date +%s) - lock_mtime ))
+    [ "$lock_age" -lt "$refresh_interval" ] && needs_refresh=false
 fi
 
 if $needs_refresh; then
@@ -293,12 +313,12 @@ if $needs_refresh; then
             "https://api.anthropic.com/api/oauth/usage" 2>/dev/null)
         if [ -n "$response" ] && echo "$response" | jq -e '.five_hour' >/dev/null 2>&1; then
             usage_data="$response"
+            usage_stale=false
+            data_age=0
             echo "$response" > "$cache_file"
         fi
     fi
-    if [ -z "$usage_data" ] && [ -f "$cache_file" ]; then
-        usage_data=$(cat "$cache_file" 2>/dev/null)
-    fi
+    touch "$cache_lock" 2>/dev/null
 fi
 
 # ── Rate limit lines ────────────────────────────────────
@@ -340,6 +360,19 @@ if [ -n "$usage_data" ] && echo "$usage_data" | jq -e . >/dev/null 2>&1; then
 
         extra_col="${white}extra${reset}   ${extra_bar} ${extra_pct_color}\$${extra_used}${dim}/${reset}${white}\$${extra_limit}${reset}"
         rate_lines+="\n${extra_col} ${dim}⟳${reset} ${white}${extra_reset}${reset}"
+    fi
+
+    # Staleness indicator
+    if $usage_stale && [ "${data_age:-0}" -gt 0 ]; then
+        stale_label=""
+        if [ "$data_age" -ge 3600 ]; then
+            stale_label="$(( data_age / 3600 ))h $(( (data_age % 3600) / 60 ))m ago"
+        elif [ "$data_age" -ge 60 ]; then
+            stale_label="$(( data_age / 60 ))m ago"
+        else
+            stale_label="${data_age}s ago"
+        fi
+        rate_lines+="  ${yellow}⚠ ${stale_label}${reset}"
     fi
 fi
 
